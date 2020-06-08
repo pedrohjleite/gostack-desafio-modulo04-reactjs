@@ -27,7 +27,8 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      // TODO LOAD FOODS
+      const response = await api.get('/foods');
+      setFoods(response.data);
     }
 
     loadFoods();
@@ -37,7 +38,16 @@ const Dashboard: React.FC = () => {
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
     try {
-      // TODO ADD A NEW FOOD PLATE TO THE API
+      const { name, description, price, image } = food;
+      const response = await api.post('/foods', {
+        name,
+        description,
+        price,
+        image,
+        available: true,
+      });
+
+      setFoods([...foods, response.data]);
     } catch (err) {
       console.log(err);
     }
@@ -46,11 +56,33 @@ const Dashboard: React.FC = () => {
   async function handleUpdateFood(
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
-    // TODO UPDATE A FOOD PLATE ON THE API
+    const { description, image, name, price } = food;
+    const { id, available } = editingFood;
+
+    const response = await api.put(`foods/${id}`, {
+      id,
+      available,
+      description,
+      image,
+      name,
+      price,
+    });
+
+    setFoods(
+      foods.map(mapFood =>
+        mapFood.id === id ? { ...response.data } : mapFood,
+      ),
+    );
   }
 
   async function handleDeleteFood(id: number): Promise<void> {
-    // TODO DELETE A FOOD PLATE FROM THE API
+    const indexFood = foods.findIndex(foodItem => foodItem.id === id);
+    if (indexFood >= 0) {
+      await api.delete(`/foods/${id}`);
+
+      const newFoods = foods.filter(foodPlate => foodPlate.id !== id);
+      setFoods(newFoods);
+    }
   }
 
   function toggleModal(): void {
@@ -63,6 +95,8 @@ const Dashboard: React.FC = () => {
 
   function handleEditFood(food: IFoodPlate): void {
     // TODO SET THE CURRENT EDITING FOOD ID IN THE STATE
+    setEditingFood(food);
+    toggleEditModal();
   }
 
   return (
@@ -87,7 +121,7 @@ const Dashboard: React.FC = () => {
               key={food.id}
               food={food}
               handleDelete={handleDeleteFood}
-              handleEditFood={handleEditFood}
+              handleEditFood={() => handleEditFood(food)}
             />
           ))}
       </FoodsContainer>
